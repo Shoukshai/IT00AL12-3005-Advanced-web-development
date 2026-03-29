@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reservations | Booking System</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            primary: "#e10e49",
+                            light: "#ffffff",
+                            dark: "#1e1e1e",
+                            blue: "#263f6a",
+                            green: "#284e36",
+                            orange: "#e37222",
+                            rose: "#c24d52",
+                        }
+                    },
+                    boxShadow: {
+                        soft: "0 8px 40px rgba(0, 0, 0, 0.45)",
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+
+<body class="min-h-screen flex flex-col bg-brand-light text-brand-dark">
+    <header class="sticky top-0 z-40 bg-brand-dark text-white shadow-soft">
+        <div class="mx-auto max-w-7xl px-6">
+            <div class="flex h-16 items-center justify-between">
+                <a href="/" class="flex items-center gap-3 flex-1">
+                    <img src="logo.svg" alt="Booking System" class="h-10 w-10">
+                    <div class="leading-tight">
+                        <span class="block text-sm font-semibold">Booking System</span>
+                        <span class="block text-xs text-white/70">Secure resource booking</span>
+                    </div>
+                </a>
+                <nav class="flex items-center gap-3">
+                    <a href="/resources" data-auth="user"
+                        class="res-link rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 w-40 text-center cursor-not-allowed pointer-events-none">
+                        Resources
+                    </a>
+                    <a href="/reservations" data-auth="user"
+                        class="res-link rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 w-40 text-center cursor-not-allowed pointer-events-none">
+                        Reservations
+                    </a>
+                    <a href="/register" data-auth="guest"
+                        class="auth-link rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 w-40 text-center">
+                        Register
+                    </a>
+                    <a href="/login" data-auth="guest"
+                        class="auth-link rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold hover:bg-white/10 w-40 text-center">
+                        Sign in
+                    </a>
+                    <button onclick="logout()" data-auth="user"
+                        class="auth-link hidden rounded-xl bg-brand-primary px-4 py-2 text-sm font-semibold text-white w-40 text-center">
+                        Sign out
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main id="mainContent" class="mx-auto max-w-7xl px-6 flex-grow">
+        <section class="py-12">
+            <div class="rounded-3xl bg-white p-8 shadow-soft">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <span
+                            class="inline-flex items-center gap-2 rounded-full bg-brand-orange/10 px-4 py-1 text-sm font-semibold text-brand-orange">
+                            Reservation management
+                        </span>
+                        <h1 class="mt-4 text-3xl font-semibold leading-tight">Reservations</h1>
+                        <p class="mt-2 max-w-2xl text-sm text-black/70">
+                            Create, view, update, and manage your reservations.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="pb-16">
+            <div class="grid gap-8 lg:grid-cols-12">
+                <div class="lg:col-span-8">
+                    <div class="rounded-3xl bg-white p-8 shadow-soft">
+                        <h2 class="text-xl font-semibold">Reservation form</h2>
+                        <p class="mt-1 text-sm text-black/60">
+                            Fill in the details below to create or update a reservation.
+                        </p>
+                        <div id="formMessage" class="hidden mt-6 rounded-2xl border px-4 py-3 text-sm"
+                            role="alert"></div>
+
+                        <form class="mt-8 space-y-6" id="reservationForm" novalidate>
+                            <input type="hidden" id="reservationId" name="reservationId" value="" />
+                            <input type="hidden" id="userId" name="userId" value="" />
+
+                            <div class="grid gap-6 lg:grid-cols-2">
+                                <div>
+                                    <label for="resourceSelect" class="block text-sm font-semibold">Resource</label>
+                                    <select id="resourceSelect" name="resourceSelect"
+                                        class="mt-2 w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30 transition-all"
+                                        required>
+                                        <option value="">Loading resources...</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-semibold">Reservation owner</label>
+                                    <div id="ownerDisplay"
+                                        class="mt-2 rounded-2xl border border-black/10 bg-black/5 px-4 py-3 text-sm text-black/70">
+                                        Your account
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid gap-6 lg:grid-cols-2">
+                                <div>
+                                    <label for="startTime" class="block text-sm font-semibold">Start time</label>
+                                    <input type="datetime-local" id="startTime" name="startTime"
+                                        class="mt-2 w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30 transition-all"
+                                        required />
+                                </div>
+
+                                <div>
+                                    <label for="endTime" class="block text-sm font-semibold">End time</label>
+                                    <input type="datetime-local" id="endTime" name="endTime"
+                                        class="mt-2 w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30 transition-all"
+                                        required />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="note" class="block text-sm font-semibold">Note</label>
+                                <textarea id="note" name="note" rows="3"
+                                    class="mt-2 w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30 transition-all"
+                                    placeholder="Optional notes about this reservation..."></textarea>
+                            </div>
+
+                            <div>
+                                <label for="status" class="block text-sm font-semibold">Status</label>
+                                <select id="status" name="status"
+                                    class="mt-2 w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/30 transition-all">
+                                    <option value="active">Active</option>
+                                    <option value="cancelled">Cancelled</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+
+                            <div id="reservationActions" class="mt-8 grid gap-4 w-full grid-cols-1 sm:grid-flow-col sm:auto-cols-fr"></div>
+                        </form>
+                    </div>
+                </div>
+
+                <aside class="lg:col-span-4">
+                    <div class="rounded-3xl bg-white p-6 shadow-soft">
+                        <h3 class="font-semibold">Reservation list</h3>
+                        <div id="reservationList" class="mt-4 space-y-2">
+                            <p class="text-sm text-black/50">Loading...</p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-brand-dark text-white">
+        <div class="mx-auto max-w-7xl px-6 py-10">
+            <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center gap-3">
+                    <img src="logo.svg" alt="Booking System" class="h-8 w-8 opacity-90">
+                    <div class="leading-tight">
+                        <p class="text-sm font-semibold">Booking System</p>
+                        <p class="text-xs text-white/60">Secure resource booking</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 border-t border-white/10 pt-4 text-xs text-white/50">
+                © <span id="year"></span> Booking System. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <script type="module">
+        import { requireAuthOrBlockPage, initAuthUI, getTokenPayload } from '/js/auth-ui.js';
+
+        if (!requireAuthOrBlockPage()) {
+            throw new Error("Authentication required");
+        }
+
+        initAuthUI();
+
+        const BUTTON_BASE = "w-full rounded-2xl px-6 py-3 text-sm font-semibold transition-all duration-200 ease-out";
+        const BUTTON_ENABLED = "bg-brand-primary text-white hover:bg-brand-dark/80 shadow-soft";
+
+        let createButton, updateButton, deleteButton;
+        let resourcesData = [];
+        let usersData = [];
+        let currentUser = null;
+
+        function addButton({ label, type = "button", value, classes = "" }) {
+            const btn = document.createElement("button");
+            btn.type = type;
+            btn.textContent = label;
+            btn.name = "action";
+            if (value) btn.value = value;
+            btn.className = `${BUTTON_BASE} ${classes}`.trim();
+            document.getElementById("reservationActions").appendChild(btn);
+            return btn;
+        }
+
+        function setButtonEnabled(btn, enabled) {
+            if (!btn) return;
+            btn.disabled = !enabled;
+            btn.classList.toggle("cursor-not-allowed", !enabled);
+            btn.classList.toggle("opacity-50", !enabled);
+        }
+
+        createButton = addButton({ label: "Create", type: "submit", value: "create", classes: BUTTON_ENABLED });
+        updateButton = addButton({ label: "Update", value: "update", classes: BUTTON_ENABLED });
+        deleteButton = addButton({ label: "Delete", value: "delete", classes: BUTTON_ENABLED });
+
+        setButtonEnabled(updateButton, false);
+        setButtonEnabled(deleteButton, false);
+
+        function showMessage(type, message) {
+            const el = document.getElementById("formMessage");
+            if (!el) return;
+
+            el.className = "mt-6 rounded-2xl border px-4 py-3 text-sm whitespace-pre-line";
+            el.classList.remove("hidden");
+
+            if (type === "success") {
+                el.classList.add("border-emerald-200", "bg-emerald-50", "text-emerald-900");
+            } else if (type === "info") {
+                el.classList.add("border-amber-200", "bg-amber-50", "text-amber-900");
+            } else {
+                el.classList.add("border-rose-200", "bg-rose-50", "text-rose-900");
+            }
+
+            el.textContent = message;
+            el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        function clearMessage() {
+            const el = document.getElementById("formMessage");
+            if (el) {
+                el.textContent = "";
+                el.classList.add("hidden");
+            }
+        }
+
+        async function fetchWithAuth(url, options = {}) {
+            const token = localStorage.getItem("token");
+            if (!token) throw new Error("No token");
+
+            const headers = {
+                ...options.headers,
+                "Authorization": `Bearer ${token}`
+            };
+
+            if (options.body && typeof options.body === "object") {
+                headers["Content-Type"] = "application/json";
+                options.body = JSON.stringify(options.body);
+            }
+
+            return fetch(url, { ...options, headers });
+        }
+
+        async function loadResources() {
+            try {
+                const res = await fetchWithAuth("/api/resources");
+                const data = await res.json();
+
+                if (!res.ok || !data.ok) {
+                    console.error("Failed to load resources");
+                    return;
+                }
+
+                resourcesData = data.data || [];
+                const select = document.getElementById("resourceSelect");
+                select.innerHTML = '<option value="">-- Select a resource --</option>' +
+                    resourcesData.map(r => `<option value="${r.id}">${r.name} (${r.price} ${r.price_unit})</option>`).join("");
+            } catch (err) {
+                console.error("Load resources error:", err);
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const payload = getTokenPayload();
+                currentUser = payload && payload.sub ? {
+                    id: Number(payload.sub),
+                    email: payload.email || "Authenticated user"
+                } : null;
+
+                const hiddenUserId = document.getElementById("userId");
+                const ownerDisplay = document.getElementById("ownerDisplay");
+
+                if (currentUser) {
+                    hiddenUserId.value = String(currentUser.id);
+                    ownerDisplay.textContent = `Your account (${currentUser.email})`;
+                    usersData = [currentUser];
+                } else {
+                    hiddenUserId.value = "";
+                    ownerDisplay.textContent = "Authenticated user";
+                    usersData = [];
+                }
+            } catch (err) {
+                console.error("Load users error:", err);
+            }
+        }
+
+        async function loadReservations() {
+            try {
+                const res = await fetchWithAuth("/api/reservations");
+                const data = await res.json();
+
+                if (!res.ok || !data.ok) {
+                    document.getElementById("reservationList").innerHTML = '<p class="text-sm text-red-600">Failed to load reservations</p>';
+                    return;
+                }
+
+                const list = document.getElementById("reservationList");
+                if (data.data.length === 0) {
+                    list.innerHTML = '<p class="text-sm text-black/50">No reservations found</p>';
+                    return;
+                }
+
+                list.innerHTML = data.data.map(r => `
+                    <div class="p-3 border border-black/10 rounded-xl hover:bg-black/5 cursor-pointer transition" onclick="selectReservation(${r.id})">
+                        <p class="text-sm font-semibold">ID: ${r.id} - ${r.resource_name || 'Resource #' + r.resource_id}</p>
+                        <p class="text-xs text-black/60">${r.user_email || 'User #' + r.user_id}</p>
+                        <p class="text-xs text-black/60">${new Date(r.start_time).toLocaleString()} - ${new Date(r.end_time).toLocaleString()}</p>
+                        <p class="text-xs"><span class="inline-block px-2 py-0.5 rounded-full text-white ${r.status === 'active' ? 'bg-brand-green' : r.status === 'cancelled' ? 'bg-brand-rose' : 'bg-black/50'}">${r.status}</span></p>
+                    </div>
+                `).join("");
+            } catch (err) {
+                console.error("Load error:", err);
+                document.getElementById("reservationList").innerHTML = '<p class="text-sm text-red-600">Error loading reservations</p>';
+            }
+        }
+
+        window.selectReservation = async function(id) {
+            try {
+                const res = await fetchWithAuth(`/api/reservations/${id}`);
+                const data = await res.json();
+
+                if (!res.ok || !data.ok) {
+                    showMessage("error", "Failed to load reservation details");
+                    return;
+                }
+
+                const r = data.data;
+                document.getElementById("reservationId").value = r.id;
+                document.getElementById("resourceSelect").value = r.resource_id;
+                document.getElementById("userId").value = r.user_id;
+                document.getElementById("ownerDisplay").textContent = r.user_email ? `Reservation owner (${r.user_email})` : `Reservation owner (User #${r.user_id})`;
+                document.getElementById("startTime").value = new Date(r.start_time).toISOString().slice(0, 16);
+                document.getElementById("endTime").value = new Date(r.end_time).toISOString().slice(0, 16);
+                document.getElementById("note").value = r.note || "";
+                document.getElementById("status").value = r.status;
+
+                setButtonEnabled(updateButton, true);
+                setButtonEnabled(deleteButton, true);
+                setButtonEnabled(createButton, false);
+
+                clearMessage();
+            } catch (err) {
+                console.error("Select error:", err);
+                showMessage("error", "Error loading reservation");
+            }
+        };
+
+        function clearForm() {
+            document.getElementById("reservationForm").reset();
+            document.getElementById("reservationId").value = "";
+            setButtonEnabled(createButton, true);
+            setButtonEnabled(updateButton, false);
+            setButtonEnabled(deleteButton, false);
+            clearMessage();
+            
+            const hiddenUserId = document.getElementById("userId");
+            const ownerDisplay = document.getElementById("ownerDisplay");
+            if (currentUser) {
+                hiddenUserId.value = String(currentUser.id);
+                ownerDisplay.textContent = `Your account (${currentUser.email})`;
+            } else {
+                hiddenUserId.value = "";
+                ownerDisplay.textContent = "Authenticated user";
+            }
+        }
+
+        createButton.addEventListener("click", async (e) => {
+            e.preventDefault();
+            clearMessage();
+
+            const resourceId = document.getElementById("resourceSelect").value;
+            const userId = document.getElementById("userId").value;
+            const startTime = document.getElementById("startTime").value;
+            const endTime = document.getElementById("endTime").value;
+            const note = document.getElementById("note").value;
+            const status = document.getElementById("status").value;
+
+            if (!resourceId || !userId || !startTime || !endTime) {
+                showMessage("error", "Please fill in all required fields");
+                return;
+            }
+
+            try {
+                const res = await fetchWithAuth("/api/reservations", {
+                    method: "POST",
+                    body: {
+                        resourceId: parseInt(resourceId),
+                        userId: parseInt(userId),
+                        startTime,
+                        endTime,
+                        note,
+                        status
+                    }
+                });
+
+                const data = await res.json();
+
+                if (!res.ok || !data.ok) {
+                    showMessage("error", data.message || "Failed to create reservation");
+                    return;
+                }
+
+                showMessage("success", "Reservation created successfully");
+                clearForm();
+                await loadReservations();
+            } catch (err) {
+                console.error("Create error:", err);
+                showMessage("error", "Error creating reservation");
+            }
+        });
+
+        updateButton.addEventListener("click", async (e) => {
+            e.preventDefault();
+            clearMessage();
+
+            const id = document.getElementById("reservationId").value;
+            if (!id) {
+                showMessage("error", "No reservation selected");
+                return;
+            }
+
+            const resourceId = document.getElementById("resourceSelect").value;
+            const userId = document.getElementById("userId").value;
+            const startTime = document.getElementById("startTime").value;
+            const endTime = document.getElementById("endTime").value;
+            const note = document.getElementById("note").value;
+            const status = document.getElementById("status").value;
+
+            if (!resourceId || !userId || !startTime || !endTime) {
+                showMessage("error", "Please fill in all required fields");
+                return;
+            }
+
+            try {
+                const res = await fetchWithAuth(`/api/reservations/${id}`, {
+                    method: "PUT",
+                    body: {
+                        resourceId: parseInt(resourceId),
+                        userId: parseInt(userId),
+                        startTime,
+                        endTime,
+                        note,
+                        status
+                    }
+                });
+
+                const data = await res.json();
+
+                if (!res.ok || !data.ok) {
+                    showMessage("error", data.message || "Failed to update reservation");
+                    return;
+                }
+
+                showMessage("success", "Reservation updated successfully");
+                clearForm();
+                await loadReservations();
+            } catch (err) {
+                console.error("Update error:", err);
+                showMessage("error", "Error updating reservation");
+            }
+        });
+
+        deleteButton.addEventListener("click", async (e) => {
+            e.preventDefault();
+            clearMessage();
+
+            const id = document.getElementById("reservationId").value;
+            if (!id) {
+                showMessage("error", "No reservation selected");
+                return;
+            }
+
+            if (!confirm("Are you sure you want to delete this reservation?")) {
+                return;
+            }
+
+            try {
+                const res = await fetchWithAuth(`/api/reservations/${id}`, {
+                    method: "DELETE"
+                });
+
+                if (res.status === 204 || res.ok) {
+                    showMessage("success", "Reservation deleted successfully");
+                    clearForm();
+                    await loadReservations();
+                } else {
+                    const data = await res.json();
+                    showMessage("error", data.message || "Failed to delete reservation");
+                }
+            } catch (err) {
+                console.error("Delete error:", err);
+                showMessage("error", "Error deleting reservation");
+            }
+        });
+
+        window.logout = function() {
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+        };
+
+        document.getElementById("year").textContent = new Date().getFullYear();
+
+        // Initialize
+        (async () => {
+            await Promise.all([loadResources(), loadUsers(), loadReservations()]);
+        })();
+    </script>
+</body>
+
+</html>
